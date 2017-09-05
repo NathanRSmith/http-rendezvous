@@ -11,7 +11,11 @@ var Fence = module.exports = function(opts) {
   this.server = http.createServer(this._onRequest.bind(this));
   this._streams = {};
 }
-Fence.prototype.start = function(port) { this.server.listen(port || this.opts.port); return this; }
+Fence.prototype.start = function(port) {
+  this.server.listen(port || this.opts.port);
+  this.log('info', 'Listening on port '+(port || this.opts.port))
+  return this;
+}
 Fence.prototype.stop = function() { this.server.close(); return this; }
 Fence.prototype.log = function(level, msg) {
   if(this.logger && this.logger[level]) {

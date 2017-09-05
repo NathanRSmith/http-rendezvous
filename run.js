@@ -12,7 +12,7 @@ var logger = {
   trace: msg => console.log(new Date().toISOString(), msg),
 };
 
-var Fence = require('./index');
-var fence = new Fence({port: argv.port, logger: logger, stream_timeout: 60000});
+var Rendezvous = require('./');
+var rendezvous = new Rendezvous({port: argv.port, logger: logger, stream_timeout: 60000});
 
-fence.start();
+rendezvous.start();
