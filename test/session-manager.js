@@ -74,7 +74,7 @@ module.exports = {
 
       assert.equal(sess.state, 'CREATED');
       var timeout = setTimeout(v => {
-        throw new Error('timeout not emitted');
+        done(new Error('timeout not emitted'));
       }, 20);
 
       sess.once('timeout', sess => {
@@ -114,7 +114,7 @@ module.exports = {
       sess.registerSource(req);
 
       var timeout = setTimeout(v => {
-        throw new Error('timeout not emitted');
+        done(new Error('timeout not emitted'));
       }, 20);
 
       sess.once('timeout', sess => {
@@ -132,7 +132,7 @@ module.exports = {
       sess.registerDestination(req);
 
       var timeout = setTimeout(v => {
-        throw new Error('timeout not emitted');
+        done(new Error('timeout not emitted'));
       }, 20);
 
       sess.once('timeout', sess => {
@@ -287,7 +287,7 @@ module.exports = {
       assert.equal(sess.state, 'STREAMING');
     },
 
-    'should fail if no bytes moved in ttl': function() { this.skip(); },
+    'should fail if no bytes moved in rolling window': function() { this.skip(); },
 
     'should complete successfully if source then destination registered': function(done) {
       var manager = new SessionManager();
@@ -309,7 +309,7 @@ module.exports = {
       }, 10);
     },
 
-    'should complete successfully if destination then source registered': function() {
+    'should complete successfully if destination then source registered': function(done) {
       var manager = new SessionManager();
       var sess = manager.createSession();
 
