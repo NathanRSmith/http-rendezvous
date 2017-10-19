@@ -5,11 +5,17 @@ A simple http server with 3 routes:
 * `POST /stream`: Creates a stream which will wait for up to 1 minute for both sides to connect. Returns the stream id for clients to connect to.
 * `GET/PUT /stream/:id`: Pairs one GET with one PUT and pipes them together once both are connected. Streaming is continued until completed from the PUT side or until either side disconnects, at which point both sides are terminated.
 
+# Tests
+
+```
+mocha -u exports --recursive
+```
+
 # Testing locally
 
 ```
 npm install
-node run.js --port 9999
+node bin/run-standalone --port 9999
 ```
 
 Create stream:

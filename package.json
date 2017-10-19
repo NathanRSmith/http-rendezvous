@@ -9,6 +9,7 @@
   "author": "Nathan Smith <nathanrandal@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "bunyan": "^1.8.12",
     "lodash": "^4.17.4",
     "mississippi": "^1.3.0",
     "mock-req": "^0.2.0",

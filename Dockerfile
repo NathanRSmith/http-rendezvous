@@ -11,4 +11,4 @@ RUN cd http-rendezvous && npm install
 ADD * http-rendezvous/
 
 EXPOSE 8000
-CMD ["node", "http-rendezvous/run.js", "--port", "8000"]
+CMD ["node", "http-rendezvous/bin/run-standalone.js", "--port", "8000"]
