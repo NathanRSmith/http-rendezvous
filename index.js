@@ -5,25 +5,25 @@ var STREAM_GENERATOR_URL_REGEX = /^\/stream\/?$/;
 var STREAM_URL_REGEX = /^\/stream\/([a-zA-Z0-9-_]+)\/?$/;
 var STREAM_TIMEOUT = 60000;
 
-var Fence = module.exports = function(opts) {
+var Rendezvous = module.exports = function(opts) {
   this.opts = opts || {};
   this.logger = this.opts.logger;
   this.server = http.createServer(this._onRequest.bind(this));
   this._streams = {};
 }
-Fence.prototype.start = function(port) {
+Rendezvous.prototype.start = function(port) {
   this.server.listen(port || this.opts.port);
   this.log('info', 'Listening on port '+(port || this.opts.port))
   return this;
 }
-Fence.prototype.stop = function() { this.server.close(); return this; }
-Fence.prototype.log = function(level, msg) {
+Rendezvous.prototype.stop = function() { this.server.close(); return this; }
+Rendezvous.prototype.log = function(level, msg) {
   if(this.logger && this.logger[level]) {
     this.logger[level](msg);
   }
   return this;
 }
-Fence.prototype._onRequest = function(req, rep) {
+Rendezvous.prototype._onRequest = function(req, rep) {
   this.log('debug', req.method+' '+req.url);
   // handler for stream generator
   if(req.method === 'POST' && req.url.search(STREAM_GENERATOR_URL_REGEX) !== -1) {
@@ -61,7 +61,7 @@ Fence.prototype._onRequest = function(req, rep) {
       dst.rep.statusCode = 200;
 
       src.req.pipe(dst.rep);
-      clearTimeout(stream.timer)
+      clearTimeout(stream.timer);
 
       src.req.on('end', this.deleteStream.bind(this, id));
       src.req.on('close', this.deleteStream.bind(this, id));
@@ -76,7 +76,7 @@ Fence.prototype._onRequest = function(req, rep) {
   }
 }
 
-Fence.prototype.deleteStream = function(id) {
+Rendezvous.prototype.deleteStream = function(id) {
   this.log('debug','delete "'+id+'"');
   if(this._streams[id].src) reply504(this._streams[id].src.rep);
   if(this._streams[id].dst) reply504(this._streams[id].dst.rep);
