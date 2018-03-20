@@ -24,6 +24,7 @@ module.exports = {
     'should create a session at /stream': function(done) {
       var server = new StandaloneServer({});
       var req = new MockReq({method: 'POST', url: '/stream'});
+      req.end();
       var res = new MockRes(() =>{
         assert.equal(res.statusCode, 201);
         assert.equal(res.getHeader('content-type'), 'application/json');
@@ -59,6 +60,7 @@ module.exports = {
     'should send 404 to source request if session previously expired': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         setTimeout(sendSrc, 10);
@@ -79,6 +81,7 @@ module.exports = {
     'should send 404 to destination request if session previously expired': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         setTimeout(sendDst, 10);
@@ -99,6 +102,7 @@ module.exports = {
     'should send 504 to source request if session expires': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
@@ -119,6 +123,7 @@ module.exports = {
     'should send 504 to destination request if session expires': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendDst();
@@ -139,6 +144,7 @@ module.exports = {
     'should send 403 if source already connected': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendSrc1();
@@ -167,6 +173,7 @@ module.exports = {
     'should send 403 if destination already connected': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendDst1();
@@ -195,6 +202,7 @@ module.exports = {
     'should end stream if source error': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
@@ -237,6 +245,7 @@ module.exports = {
     'should end stream if destination error': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
@@ -279,6 +288,7 @@ module.exports = {
     'should end stream if source closes unexpectedly': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
@@ -310,6 +320,7 @@ module.exports = {
     'should end stream if destination closes unexpectedly': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
@@ -341,6 +352,7 @@ module.exports = {
     'should send 200 & stream if source then destination connects': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
@@ -374,6 +386,7 @@ module.exports = {
     'should send 200 & stream if destination then source connects': function(done) {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
       var resCreate = new MockRes(() =>{
         assert.equal(resCreate.statusCode, 201);
         sendDst();
@@ -398,6 +411,68 @@ module.exports = {
           assert.equal(res._getString(), 'abcdefghijkl');
           done();
         });
+        server.handleRequest(req, res);
+      }
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should respond to GET with any provided download headers': function(done) {
+      var server = new StandaloneServer({session_ttl: 5});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.write('{ "download_headers": { "aa": 1, "bb": 2 } }');
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 201);
+        sendSrc();
+        sendDst();
+      });
+
+      var sendSrc = () =>{
+        var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes();
+        server.handleRequest(req, res);
+        setTimeout(req.end.bind(req), 5);
+      }
+
+      var sendDst = () =>{
+        var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes(() =>{
+          assert.equal(res.getHeader("aa"), 1);
+          assert.equal(res.getHeader("bb"), 2);
+          done();
+        });
+        server.handleRequest(req, res);
+      }
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should respond to PUT with any provided upload headers': function(done) {
+      var server = new StandaloneServer({session_ttl: 5});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.write('{ "upload_headers": { "aa": 1, "bb": 2 } }');
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 201);
+        sendSrc();
+        sendDst();
+      });
+
+      var sendSrc = () =>{
+        var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes(() => {
+          assert.equal(res.getHeader("aa"), 1);
+          assert.equal(res.getHeader("bb"), 2);
+          done();
+        });
+        server.handleRequest(req, res);
+        setTimeout(req.end.bind(req), 5);
+      }
+
+      var sendDst = () =>{
+        var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes();
         server.handleRequest(req, res);
       }
 
