@@ -142,7 +142,7 @@ module.exports = {
     },
 
     'should send 403 if source already connected': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
       var resCreate = new MockRes(() =>{
@@ -171,7 +171,7 @@ module.exports = {
     },
 
     'should send 403 if destination already connected': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
       var resCreate = new MockRes(() =>{
@@ -200,7 +200,7 @@ module.exports = {
     },
 
     'should end stream if source error': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
       var resCreate = new MockRes(() =>{
@@ -243,7 +243,7 @@ module.exports = {
     },
 
     'should end stream if destination error': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
       var resCreate = new MockRes(() =>{
@@ -286,7 +286,7 @@ module.exports = {
     },
 
     'should end stream if source closes unexpectedly': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
       var resCreate = new MockRes(() =>{
@@ -318,7 +318,7 @@ module.exports = {
     },
 
     'should end stream if destination closes unexpectedly': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
       var resCreate = new MockRes(() =>{
@@ -350,7 +350,7 @@ module.exports = {
     },
 
     'should send 200 & stream if source then destination connects': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
       var resCreate = new MockRes(() =>{
@@ -384,7 +384,7 @@ module.exports = {
     },
 
     'should send 200 & stream if destination then source connects': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
       var resCreate = new MockRes(() =>{
@@ -417,8 +417,220 @@ module.exports = {
       server.handleRequest(reqCreate, resCreate);
     },
 
+    'should provide any initial error from source to subsequent request from destination': function() {
+      var server = new StandaloneServer({});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 201);
+        sendError();
+        sendDst();
+      });
+
+      var sendError = () =>{
+        var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
+        var res = new MockRes();
+        server.handleRequest(req, res);
+
+        setTimeout(req.write.bind(req, '{ '), 5);
+        setTimeout(req.write.bind(req, '"http_status":400, '), 10);
+        setTimeout(req.write.bind(req, '"name":"GenericError", '), 15);
+        setTimeout(req.write.bind(req, '"message":"this is an error" '), 20);
+        setTimeout(req.write.bind(req, '}'), 25);
+        setTimeout(req.end.bind(req), 30);
+      }
+
+      var sendDst = () =>{
+        var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes(() =>{
+          assert.equal(res.statusCode, 400);
+          let body = JSON.parse(res._getString());
+          assert.equal(body.name, "GenericError");
+          assert.equal(body.message,"this is an error");
+          done();
+        });
+        server.handleRequest(req, res);
+      }
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should provide any initial error from destination to subsequent request from source': function() {
+      var server = new StandaloneServer({});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 201);
+        sendError();
+        sendSrc();
+      });
+
+      var sendError = () =>{
+        var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
+        var res = new MockRes();
+        server.handleRequest(req, res);
+
+        setTimeout(req.write.bind(req, '{ '), 5);
+        setTimeout(req.write.bind(req, '"http_status":400, '), 10);
+        setTimeout(req.write.bind(req, '"name":"GenericError", '), 15);
+        setTimeout(req.write.bind(req, '"message":"this is an error" '), 20);
+        setTimeout(req.write.bind(req, '}'), 25);
+        setTimeout(req.end.bind(req), 30);
+      }
+
+      var sendSrc = () =>{
+        var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes(() => {
+          assert.equal(res.statusCode, 400);
+          let body = JSON.parse(res._getString());
+          assert.equal(body.name, "GenericError");
+          assert.equal(body.message,"this is an error");
+          done();
+        });
+        server.handleRequest(req, res);
+
+        setTimeout(req.write.bind(req, 'abc'), 35);
+        setTimeout(req.write.bind(req, 'def'), 40);
+        setTimeout(req.write.bind(req, 'ghi'), 45);
+        setTimeout(req.write.bind(req, 'jkl'), 50);
+        setTimeout(req.end.bind(req), 55);
+      }
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should respond to connected destination with subsequent error from source client': function() {
+      var server = new StandaloneServer({});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 201);
+        sendDst();
+        sendError();
+      });
+
+      var sendDst = () =>{
+        var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes(() =>{
+          assert.equal(res.statusCode, 400);
+          let body = JSON.parse(res._getString());
+          assert.equal(body.name, "GenericError");
+          assert.equal(body.message,"this is an error");
+          done();
+        });
+        server.handleRequest(req, res);
+      }
+
+      var sendError = () =>{
+        var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
+        var res = new MockRes();
+        server.handleRequest(req, res);
+
+        setTimeout(req.write.bind(req, '{ '), 5);
+        setTimeout(req.write.bind(req, '"http_status":400, '), 10);
+        setTimeout(req.write.bind(req, '"name":"GenericError", '), 15);
+        setTimeout(req.write.bind(req, '"message":"this is an error" '), 20);
+        setTimeout(req.write.bind(req, '}'), 25);
+        setTimeout(req.end.bind(req), 30);
+      }
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should respond to connected source with subsequent error from destination client': function() {
+      var server = new StandaloneServer({});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 201);
+        sendSrc();
+        sendError();
+      });
+
+      var sendSrc = () =>{
+        var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes(() => {
+          assert.equal(res.statusCode, 400);
+          let body = JSON.parse(res._getString());
+          assert.equal(body.name, "GenericError");
+          assert.equal(body.message,"this is an error");
+          done();
+        });
+        server.handleRequest(req, res);
+
+        setTimeout(req.write.bind(req, 'abc'), 5);
+        setTimeout(req.write.bind(req, 'def'), 10);
+        setTimeout(req.write.bind(req, 'ghi'), 15);
+        setTimeout(req.write.bind(req, 'jkl'), 20);
+        setTimeout(req.end.bind(req), 25);
+      }
+
+      var sendError = () =>{
+        var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
+        var res = new MockRes();
+        server.handleRequest(req, res);
+
+        setTimeout(req.write.bind(req, '{ '), 30);
+        setTimeout(req.write.bind(req, '"http_status":400, '), 35);
+        setTimeout(req.write.bind(req, '"name":"GenericError", '), 40);
+        setTimeout(req.write.bind(req, '"message":"this is an error" '), 45);
+        setTimeout(req.write.bind(req, '}'), 50);
+        setTimeout(req.end.bind(req), 55);
+      }
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should send 409 if client tries to report error after connecting': function(done) {
+      var server = new StandaloneServer({});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 201);
+        sendSrc();
+        sendDst();
+        sendError();
+      });
+      let dones = 0;
+
+      var checkDone = () => {
+        dones++;
+        if (dones == 2) done();
+      };
+
+      var sendSrc = () =>{
+        var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes();
+        server.handleRequest(req, res);
+
+        setTimeout(req.write.bind(req, 'abc'), 5);
+        setTimeout(req.write.bind(req, 'def'), 10);
+        setTimeout(req.write.bind(req, 'ghi'), 15);
+        setTimeout(req.write.bind(req, 'jkl'), 20);
+        setTimeout(req.end.bind(req), 25);
+      }
+
+      var sendDst = () =>{
+        var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
+        var res = new MockRes(() => checkDone());
+        server.handleRequest(req, res);
+      }
+
+      var sendError = () =>{
+        var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
+        req.end();
+        var res = new MockRes(() => {
+          assert.equal(res.statusCode, 409);
+          checkDone();
+        });
+        server.handleRequest(req, res);
+      }
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
     'should respond to GET with any provided download headers': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "download_headers": { "aa": 1, "bb": 2 } }');
       reqCreate.end();
@@ -432,7 +644,7 @@ module.exports = {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes();
         server.handleRequest(req, res);
-        setTimeout(req.end.bind(req), 5);
+        req.end();
       }
 
       var sendDst = () =>{
@@ -449,7 +661,7 @@ module.exports = {
     },
 
     'should respond to PUT with any provided upload headers': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "upload_headers": { "aa": 1, "bb": 2 } }');
       reqCreate.end();
@@ -467,7 +679,7 @@ module.exports = {
           done();
         });
         server.handleRequest(req, res);
-        setTimeout(req.end.bind(req), 5);
+        req.end();
       }
 
       var sendDst = () =>{

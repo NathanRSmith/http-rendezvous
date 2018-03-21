@@ -106,6 +106,53 @@ module.exports = {
       sess.delete();
     },
 
+    'should register client error': function() {
+      var manager = new SessionManager();
+      var sess = manager.createSession();
+      var error = { http_status:400, name:'GenericError', message:'generic error happened' };
+
+      sess.registerClientError(error);
+
+      assert.equal(sess.client_error.http_status, error.http_status);
+      assert.equal(sess.client_error.name, error.name);
+      assert.equal(sess.client_error.message, error.message);
+      assert.equal(sess.state, 'CLIENT_ERROR');
+
+      sess.delete();
+    },
+
+    'should emit client error': function(done) {
+      var manager = new SessionManager();
+      var sess = manager.createSession();
+      var error = { http_status:400, name:'GenericError', message:'generic error happened' };
+
+      sess.once('client_error', sess => {
+        assert.equal(sess.client_error.http_status, error.http_status);
+        assert.equal(sess.client_error.name, error.name);
+        assert.equal(sess.client_error.message, error.message);
+        done();
+      });
+
+      sess.registerClientError(error);
+    },
+
+    'should wait for event handlers before releasing resources on client error': function() {
+      var manager = new SessionManager();
+      var sess = manager.createSession();
+      var error = { http_status:400, name:'GenericError', message:'generic error happened' };
+
+      var finished = false;
+      sess.once('client_error', sess => {
+        var i = 0;
+        while (++i < 50) true;
+        finished = true;
+      });
+
+      sess.registerClientError(error);
+      assert.equal(finished, true);
+      assert.equal(sess.deleted, true);
+    },
+
     'should timeout after ttl with source not destination': function(done) {
       var manager = new SessionManager({session_ttl: 10});
       var sess = manager.createSession();
