@@ -1,9 +1,91 @@
 # HTTP-Rendezvous
 
-A simple http server with 3 routes:
+A simple http server with 4 routes:
 
-* `POST /stream`: Creates a stream which will wait for up to 1 minute for both sides to connect. Returns the stream id for clients to connect to.
-* `GET/PUT /stream/:id`: Pairs one GET with one PUT and pipes them together once both are connected. Streaming is continued until completed from the PUT side or until either side disconnects, at which point both sides are terminated.
+## `POST /stream`
+
+Creates a stream which will wait for up to 1 minute for both sides to connect. Returns the stream id for clients to connect to.
+
+You can call this with no body, or may optionally provide a JSON body with any of the following properties:
+* download_headers: Custom headers that will be sent in response to the GET request once streaming begins.
+* upload_headers: Custom headers that will be send in response to the PUT request when it completes.
+
+Both properties should be a JSON object in which the keys correspond to header names, and the values correspond to header values. For example:
+
+```
+{
+  "download_headers": {
+    "Content-Type": "text/csv",
+    "Content-Disposition": "attachment; filename=\"myfile.csv\""
+  },
+  "upload_headers": {
+    "Location": "http://new/path/to/myfile.csv"
+  }
+}
+```
+
+The following HTTP responses may occur:
+* 201 Created: The stream was registered successfully.
+* 400 Bad Request: You provided a body that fails to parse as JSON, or the syntax of at least one of the headers you provided violates the spec for HTTP/1.1 headers.  
+
+## `GET /stream/:id`
+
+Pairs with a corresponding PUT request and pipes them together once both are connected. Streaming is continued until completed from the PUT side or until either side disconnects, at which point both sides are terminated.
+
+The following HTTP responses may occur:
+* 200 OK: Streaming initiated successfully
+* 404 Not Found: The stream id provided does not exist or has already expired
+* 429 Too Many Requests: This stream already has a GET request connected
+* 502 Bad Gateway: The GET was connected to the corresponding PUT, but then the connection errored or closed
+* 504 Gateway Timeout: The stream expired before receiving a corresponding PUT request
+
+Additionally, any arbitrary response is possible due to the ability to report client errors (see below).
+
+## `PUT /stream/:id`
+
+Pairs with a corresponding GET request and pipes them together once both are connected. Streaming is continued until completed from the PUT side or until either side disconnects, at which point both sides are terminated.
+
+The following HTTP responses may occur:
+* 200 OK: Streaming completed successfully
+* 404 Not Found: The stream id provided does not exist or has already expired
+* 429 Too Many Requests: This stream already has a PUT request connected
+* 502 Bad Gateway: The PUT was connected to the corresponding GET, but then the connection errored or closed
+* 504 Gateway Timeout: The stream expired before receiving a corresponding GET request
+
+Additionally, any arbitrary response is possible due to the ability to report client errors (see below).
+
+## `POST /stream/:id/error`
+
+Allows one side of the stream to report any error that prevents it from sending or receiving the data to/from the other side (e.g. auth failure or missing resources). As soon as the other side connects, the error will be sent in that HTTP response and the stream will be terminated. If both sides have already connected, then this endpoint is unavailable and will fail.
+
+You can call this with no body (i.e. send a vague 400 response), or may optionally provide a JSON body with any of the following properties:
+* http_status: The HTTP status with which to respond to the GET or PUT
+* name: The name of the error type
+* message: A natural language description of the error
+
+For example:
+
+```
+{
+ "http_status": 404,
+ "name": "FileNotFoundError",
+ "message": "File 'path/to/myfile.csv' does not exist"
+}
+```
+
+The above example will cause the connected GET or PUT request to receive this response:
+
+```
+HTTP/1.1 404 Not Found
+
+{"name": "FileNotFoundError","message": "File 'path/to/myfile.csv' does not exist"}
+```
+
+The following HTTP responses may occur:
+* 200 OK: The error was registered successfully
+* 400 Bad Request: You provided a body that fails to parse as JSON
+* 404 Not Found: The stream id provided does not exist or has already expired
+* 409 Conflict: Both sides of the stream have already connected and can no longer receive client errors
 
 # Tests
 
