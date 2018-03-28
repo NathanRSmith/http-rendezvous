@@ -737,6 +737,62 @@ module.exports = {
       server.handleRequest(reqCreate, resCreate);
     },
 
+    'should send 400 if custom download header name is invalid': function(done) {
+      var server = new StandaloneServer({session_ttl: 5});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.write('{ "download_headers": { "@{}[].<>": 1 } }');
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 400);
+        assert.equal(resCreate._getString(), 'Not a valid HTTP header name: @{}[].<>');
+        done();
+      });
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should send 400 if custom download header value is invalid': function(done) {
+      var server = new StandaloneServer({session_ttl: 5});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.write('{ "download_headers": { "aa": "\\b" } }');
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 400);
+        assert.equal(resCreate._getString(), 'Not a valid HTTP header value: "\b"');
+        done();
+      });
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should send 400 if custom upload header name is invalid': function(done) {
+      var server = new StandaloneServer({session_ttl: 5});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.write('{ "upload_headers": { "@{}[].<>": 1 } }');
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 400);
+        assert.equal(resCreate._getString(), 'Not a valid HTTP header name: @{}[].<>');
+        done();
+      });
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should send 400 if custom upload header value is invalid': function(done) {
+      var server = new StandaloneServer({session_ttl: 5});
+      var reqCreate = new MockReq({method: 'POST', url: '/stream'});
+      reqCreate.write('{ "upload_headers": { "aa": "\\b" } }');
+      reqCreate.end();
+      var resCreate = new MockRes(() =>{
+        assert.equal(resCreate.statusCode, 400);
+        assert.equal(resCreate._getString(), 'Not a valid HTTP header value: "\b"');
+        done();
+      });
+
+      server.handleRequest(reqCreate, resCreate);
+    },
+
     'should respond to GET with any provided download headers': function(done) {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
