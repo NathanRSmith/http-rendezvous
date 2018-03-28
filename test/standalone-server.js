@@ -738,7 +738,7 @@ module.exports = {
     },
 
     'should send 400 if custom download header name is invalid': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "download_headers": { "@{}[].<>": 1 } }');
       reqCreate.end();
