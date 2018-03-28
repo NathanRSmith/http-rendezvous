@@ -7,6 +7,13 @@ const MockRes = require('mock-res');
 
 const StandaloneServer = require('../lib/servers/standalone');
 
+function assertErrorResponse(res, http_status, name, message) {
+  assert.equal(res.statusCode, http_status);
+  let body = JSON.parse(res._getString());
+  assert.equal(body.name, name);
+  assert.equal(body.message, message);
+}
+
 module.exports = {
   'Standalone Server': {
 
@@ -14,7 +21,7 @@ module.exports = {
       var server = new StandaloneServer({});
       var req = new MockReq({url: '/fail'});
       var res = new MockRes(() =>{
-        assert.equal(res.statusCode, 404);
+        assertErrorResponse(res, 404, "BadRouteError", "No endpoint exists for the specified method and/or route");
         done();
       });
 
@@ -39,7 +46,7 @@ module.exports = {
       var server = new StandaloneServer({});
       var req = new MockReq({method: 'PUT', url: '/stream/fail'});
       var res = new MockRes(() =>{
-        assert.equal(res.statusCode, 404);
+        assertErrorResponse(res, 404, "SessionNotFoundError", "The specified session id does not exist");
         done();
       });
 
@@ -50,7 +57,7 @@ module.exports = {
       var server = new StandaloneServer({});
       var req = new MockReq({method: 'GET', url: '/stream/fail'});
       var res = new MockRes(() =>{
-        assert.equal(res.statusCode, 404);
+        assertErrorResponse(res, 404, "SessionNotFoundError", "The specified session id does not exist");
         done();
       });
 
@@ -69,7 +76,7 @@ module.exports = {
       var sendSrc = () =>{
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>{
-          assert.equal(res.statusCode, 404);
+          assertErrorResponse(res, 404, "SessionNotFoundError", "The specified session id does not exist");
           done();
         });
         server.handleRequest(req, res);
@@ -90,7 +97,7 @@ module.exports = {
       var sendDst = () =>{
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>{
-          assert.equal(res.statusCode, 404);
+          assertErrorResponse(res, 404, "SessionNotFoundError", "The specified session id does not exist");
           done();
         });
         server.handleRequest(req, res);
@@ -111,7 +118,7 @@ module.exports = {
       var sendSrc = () =>{
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>{
-          assert.equal(res.statusCode, 504);
+          assertErrorResponse(res, 504, "SessionTimeoutError", "The specified session expired before both sides connected");
           done();
         });
         server.handleRequest(req, res);
@@ -132,7 +139,7 @@ module.exports = {
       var sendDst = () =>{
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>{
-          assert.equal(res.statusCode, 504);
+          assertErrorResponse(res, 504, "SessionTimeoutError", "The specified session expired before both sides connected");
           done();
         });
         server.handleRequest(req, res);
@@ -160,7 +167,7 @@ module.exports = {
       var sendSrc2 = () =>{
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>{
-          assert.equal(res.statusCode, 429);
+          assertErrorResponse(res, 429, "AlreadyConnectedError", "A client has already connected to the source side of this stream");
           server._cancel
           done();
         });
@@ -190,6 +197,7 @@ module.exports = {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>{
           assert.equal(res.statusCode, 429);
+          assertErrorResponse(res, 429, "AlreadyConnectedError", "A client has already connected to the destination side of this stream");
           server._cancel
           done();
         });
@@ -226,13 +234,11 @@ module.exports = {
       var dones = 0;
       var onEnd = (side, res) => {
         if(side === 'src') {
-          assert.equal(res.statusCode, 502);
-          assert.equal(res._getString(), '{"name":"StreamSourceError","message":"Stream source raised an error"}');
+          assertErrorResponse(res, 502, "StreamSourceError", "Stream source raised an error");
           dones++;
         }
         else if(side === 'dst') {
-          assert.equal(res.statusCode, 502);
-          assert.equal(res._getString(), '\n\n{"name":"StreamSourceError","message":"Stream source raised an error"}');
+          assertErrorResponse(res, 502, "StreamSourceError", "Stream source raised an error");
           dones++;
         }
         if(dones === 2) done();
@@ -271,8 +277,7 @@ module.exports = {
       var onEnd = (side, res) => {
         if(side === 'src') {
           // src won't have gotten a response yet so we can still set appropriate status header
-          assert.equal(res.statusCode, 502);
-          assert.equal(res._getString(), '{"name":"StreamSourceError","message":"Stream source raised an error"}');
+          assertErrorResponse(res, 502, "StreamSourceError", "Stream source raised an error");
           dones++;
         }
         else if(side === 'dst') {
@@ -313,13 +318,11 @@ module.exports = {
       var dones = 0;
       var onEnd = (side, res) => {
         if(side === 'src') {
-          assert.equal(res.statusCode, 502);
-          assert.equal(res._getString(), '{"name":"StreamDestinationError","message":"Stream destination raised an error"}');
+          assertErrorResponse(res, 502, "StreamDestinationError", "Stream destination raised an error");
           dones++;
         }
         else if(side === 'dst') {
-          assert.equal(res.statusCode, 502);
-          assert.equal(res._getString(), '\n\n{"name":"StreamDestinationError","message":"Stream destination raised an error"}');
+          assertErrorResponse(res, 502, "StreamDestinationError", "Stream destination raised an error");
           dones++;
         }
         if(dones === 2) done();
@@ -358,8 +361,7 @@ module.exports = {
       var onEnd = (side, res) => {
         if(side === 'src') {
           // src won't have gotten a response yet so we can still set appropriate status header
-          assert.equal(res.statusCode, 502);
-          assert.equal(res._getString(), '{"name":"StreamDestinationError","message":"Stream destination raised an error"}');
+          assertErrorResponse(res, 502, "StreamDestinationError", "Stream destination raised an error");
           dones++;
         }
         else if(side === 'dst') {
@@ -420,8 +422,7 @@ module.exports = {
       var sendSrc = () =>{
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>{
-          assert.equal(res.statusCode, 502);
-          assert.equal(res._getString(), '{"name":"StreamDestinationError","message":"Stream destination closed unexpectedly"}');
+          assertErrorResponse(res, 502, "StreamDestinationError", "Stream destination closed unexpectedly");
           done();
         });
         server.handleRequest(req, res);
@@ -434,6 +435,7 @@ module.exports = {
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
         });
+        res.headersSent = true; // our mock doesn't handle this for us
         server.handleRequest(req, res);
         setTimeout(() =>res.emit('close'), 5);
       }
@@ -543,10 +545,7 @@ module.exports = {
       var sendDst = () =>{
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>{
-          assert.equal(res.statusCode, 400);
-          let body = JSON.parse(res._getString());
-          assert.equal(body.name, "GenericError");
-          assert.equal(body.message,"this is an error");
+          assertErrorResponse(res, 400, "GenericError", "this is an error");
           done();
         });
         server.handleRequest(req, res);
@@ -583,10 +582,7 @@ module.exports = {
       var sendSrc = () =>{
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
-          assert.equal(res.statusCode, 400);
-          let body = JSON.parse(res._getString());
-          assert.equal(body.name, "GenericError");
-          assert.equal(body.message,"this is an error");
+          assertErrorResponse(res, 400, "GenericError", "this is an error");
           done();
         });
         server.handleRequest(req, res);
@@ -614,10 +610,7 @@ module.exports = {
       var sendDst = () =>{
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>{
-          assert.equal(res.statusCode, 400);
-          let body = JSON.parse(res._getString());
-          assert.equal(body.name, "GenericError");
-          assert.equal(body.message,"this is an error");
+          assertErrorResponse(res, 400, "GenericError", "this is an error");
           done();
         });
         server.handleRequest(req, res);
@@ -654,10 +647,7 @@ module.exports = {
       var sendSrc = () =>{
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
-          assert.equal(res.statusCode, 400);
-          let body = JSON.parse(res._getString());
-          assert.equal(body.name, "GenericError");
-          assert.equal(body.message,"this is an error");
+          assertErrorResponse(res, 400, "GenericError", "this is an error");
           done();
         });
         server.handleRequest(req, res);
@@ -728,7 +718,7 @@ module.exports = {
         var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
         req.end();
         var res = new MockRes(() => {
-          assert.equal(res.statusCode, 409);
+          assertErrorResponse(res, 409, "StreamStartedError", "The specified session has already started streaming");
           checkDone();
         });
         server.handleRequest(req, res);
@@ -743,8 +733,7 @@ module.exports = {
       reqCreate.write('{ "download_headers": { "@{}[].<>": 1 } }');
       reqCreate.end();
       var resCreate = new MockRes(() =>{
-        assert.equal(resCreate.statusCode, 400);
-        assert.equal(resCreate._getString(), 'Not a valid HTTP header name: @{}[].<>');
+        assertErrorResponse(resCreate, 400, "InvalidBodyError", "Not a valid HTTP header name: @{}[].<>");
         done();
       });
 
@@ -752,13 +741,12 @@ module.exports = {
     },
 
     'should send 400 if custom download header value is invalid': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "download_headers": { "aa": "\\b" } }');
       reqCreate.end();
       var resCreate = new MockRes(() =>{
-        assert.equal(resCreate.statusCode, 400);
-        assert.equal(resCreate._getString(), 'Not a valid HTTP header value: "\b"');
+        assertErrorResponse(resCreate, 400, "InvalidBodyError", "Not a valid HTTP header value: \"\b\"");
         done();
       });
 
@@ -766,13 +754,12 @@ module.exports = {
     },
 
     'should send 400 if custom upload header name is invalid': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "upload_headers": { "@{}[].<>": 1 } }');
       reqCreate.end();
       var resCreate = new MockRes(() =>{
-        assert.equal(resCreate.statusCode, 400);
-        assert.equal(resCreate._getString(), 'Not a valid HTTP header name: @{}[].<>');
+        assertErrorResponse(resCreate, 400, "InvalidBodyError", "Not a valid HTTP header name: @{}[].<>");
         done();
       });
 
@@ -780,13 +767,12 @@ module.exports = {
     },
 
     'should send 400 if custom upload header value is invalid': function(done) {
-      var server = new StandaloneServer({session_ttl: 5});
+      var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "upload_headers": { "aa": "\\b" } }');
       reqCreate.end();
       var resCreate = new MockRes(() =>{
-        assert.equal(resCreate.statusCode, 400);
-        assert.equal(resCreate._getString(), 'Not a valid HTTP header value: "\b"');
+        assertErrorResponse(resCreate, 400, "InvalidBodyError", "Not a valid HTTP header value: \"\b\"");
         done();
       });
 
