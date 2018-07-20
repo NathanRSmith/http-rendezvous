@@ -20,7 +20,7 @@ module.exports = {
     'should send 404 to unknown route': function(done) {
       var server = new StandaloneServer({});
       var req = new MockReq({url: '/fail'});
-      var res = new MockRes(() =>{
+      var res = new MockRes(() => {
         assertErrorResponse(res, 404, "BadRouteError", "No endpoint exists for the specified method and/or route");
         done();
       });
@@ -32,7 +32,7 @@ module.exports = {
       var server = new StandaloneServer({});
       var req = new MockReq({method: 'POST', url: '/stream'});
       req.end();
-      var res = new MockRes(() =>{
+      var res = new MockRes(() => {
         assert.equal(res.statusCode, 201);
         assert.equal(res.getHeader('content-type'), 'application/json');
         assert(res._getJSON().stream);
@@ -45,7 +45,7 @@ module.exports = {
     'should send 404 to source request if session not found': function(done) {
       var server = new StandaloneServer({});
       var req = new MockReq({method: 'PUT', url: '/stream/fail'});
-      var res = new MockRes(() =>{
+      var res = new MockRes(() => {
         assertErrorResponse(res, 404, "SessionNotFoundError", "The specified session id does not exist");
         done();
       });
@@ -56,7 +56,7 @@ module.exports = {
     'should send 404 to destination request if session not found': function(done) {
       var server = new StandaloneServer({});
       var req = new MockReq({method: 'GET', url: '/stream/fail'});
-      var res = new MockRes(() =>{
+      var res = new MockRes(() => {
         assertErrorResponse(res, 404, "SessionNotFoundError", "The specified session id does not exist");
         done();
       });
@@ -68,14 +68,14 @@ module.exports = {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         setTimeout(sendSrc, 10);
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assertErrorResponse(res, 404, "SessionNotFoundError", "The specified session id does not exist");
           done();
         });
@@ -89,14 +89,14 @@ module.exports = {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         setTimeout(sendDst, 10);
       });
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assertErrorResponse(res, 404, "SessionNotFoundError", "The specified session id does not exist");
           done();
         });
@@ -110,14 +110,14 @@ module.exports = {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assertErrorResponse(res, 504, "SessionTimeoutError", "The specified session expired before both sides connected");
           done();
         });
@@ -131,14 +131,14 @@ module.exports = {
       var server = new StandaloneServer({session_ttl: 5});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendDst();
       });
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assertErrorResponse(res, 504, "SessionTimeoutError", "The specified session expired before both sides connected");
           done();
         });
@@ -152,21 +152,21 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc1();
         sendSrc2();
       });
 
-      var sendSrc1 = () =>{
+      var sendSrc1 = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes();
         server.handleRequest(req, res);
       }
 
-      var sendSrc2 = () =>{
+      var sendSrc2 = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assertErrorResponse(res, 429, "AlreadyConnectedError", "A client has already connected to the source side of this stream");
           server._cancel
           done();
@@ -181,21 +181,21 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendDst1();
         sendDst2();
       });
 
-      var sendDst1 = () =>{
+      var sendDst1 = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes();
         server.handleRequest(req, res);
       }
 
-      var sendDst2 = () =>{
+      var sendDst2 = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assert.equal(res.statusCode, 429);
           assertErrorResponse(res, 429, "AlreadyConnectedError", "A client has already connected to the destination side of this stream");
           server._cancel
@@ -211,13 +211,13 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>onEnd('src', res));
         server.handleRequest(req, res);
@@ -225,7 +225,7 @@ module.exports = {
         setTimeout(() =>req.emit('error', new Error('blahdeblah')), 5);
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>onEnd('dst', res));
         server.handleRequest(req, res);
@@ -251,13 +251,13 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>onEnd('src', res));
         server.handleRequest(req, res);
@@ -266,7 +266,7 @@ module.exports = {
         setTimeout(() =>req.emit('error', new Error('blahdeblah')), 10);
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>onEnd('dst', res));
         res.headersSent = true; // our mock doesn't handle this for us
@@ -296,19 +296,19 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>onEnd('src', res));
         server.handleRequest(req, res);
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>onEnd('dst', res));
         server.handleRequest(req, res);
@@ -335,13 +335,13 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>onEnd('src', res));
         server.handleRequest(req, res);
@@ -349,7 +349,7 @@ module.exports = {
         req.write('abc');
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>onEnd('dst', res));
         res.headersSent = true; // our mock doesn't handle this for us
@@ -380,13 +380,13 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes();
         server.handleRequest(req, res);
@@ -395,9 +395,9 @@ module.exports = {
         setTimeout(() =>req.emit('close'), 5);
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
           assert.equal(res._getString(), 'abc\n\n{"name":"StreamSourceError","message":"Stream source closed unexpectedly"}');
           done();
@@ -413,15 +413,15 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assertErrorResponse(res, 502, "StreamDestinationError", "Stream destination closed unexpectedly");
           done();
         });
@@ -430,7 +430,7 @@ module.exports = {
         req.write('abc');
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -447,13 +447,13 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -467,9 +467,9 @@ module.exports = {
         setTimeout(req.end.bind(req), 21);
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
           assert.equal(res._getString(), 'abcdefghijkl');
           done();
@@ -484,13 +484,13 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendDst();
         sendSrc();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -504,9 +504,9 @@ module.exports = {
         setTimeout(req.end.bind(req), 21);
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
           assert.equal(res._getString(), 'abcdefghijkl');
           done();
@@ -521,13 +521,13 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendError();
         sendDst();
       });
 
-      var sendError = () =>{
+      var sendError = () => {
         var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -542,9 +542,9 @@ module.exports = {
         setTimeout(req.end.bind(req), 30);
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assertErrorResponse(res, 400, "GenericError", "this is an error");
           done();
         });
@@ -558,13 +558,13 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendError();
         sendSrc();
       });
 
-      var sendError = () =>{
+      var sendError = () => {
         var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -579,7 +579,7 @@ module.exports = {
         setTimeout(req.end.bind(req), 30);
       }
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assertErrorResponse(res, 400, "GenericError", "this is an error");
@@ -601,22 +601,22 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendDst();
         sendError();
       });
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assertErrorResponse(res, 400, "GenericError", "this is an error");
           done();
         });
         server.handleRequest(req, res);
       }
 
-      var sendError = () =>{
+      var sendError = () => {
         var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -638,13 +638,13 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendError();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assertErrorResponse(res, 400, "GenericError", "this is an error");
@@ -659,7 +659,7 @@ module.exports = {
         setTimeout(req.end.bind(req), 25);
       }
 
-      var sendError = () =>{
+      var sendError = () => {
         var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -681,7 +681,7 @@ module.exports = {
       var server = new StandaloneServer({});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
@@ -694,7 +694,7 @@ module.exports = {
         if (dones == 2) done();
       };
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -708,13 +708,13 @@ module.exports = {
         setTimeout(req.end.bind(req), 25);
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => checkDone());
         server.handleRequest(req, res);
       }
 
-      var sendError = () =>{
+      var sendError = () => {
         var req = new MockReq({method: 'POST', url: '/stream/'+resCreate._getJSON().stream+'/error'});
         req.end();
         var res = new MockRes(() => {
@@ -732,7 +732,7 @@ module.exports = {
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "download_headers": { "@{}[].<>": 1 } }');
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assertErrorResponse(resCreate, 400, "InvalidBodyError", "Not a valid HTTP header name: @{}[].<>");
         done();
       });
@@ -745,7 +745,7 @@ module.exports = {
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "download_headers": { "aa": "\\b" } }');
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assertErrorResponse(resCreate, 400, "InvalidBodyError", "Not a valid HTTP header value: \"\b\"");
         done();
       });
@@ -758,7 +758,7 @@ module.exports = {
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "upload_headers": { "@{}[].<>": 1 } }');
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assertErrorResponse(resCreate, 400, "InvalidBodyError", "Not a valid HTTP header name: @{}[].<>");
         done();
       });
@@ -771,7 +771,7 @@ module.exports = {
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "upload_headers": { "aa": "\\b" } }');
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assertErrorResponse(resCreate, 400, "InvalidBodyError", "Not a valid HTTP header value: \"\b\"");
         done();
       });
@@ -784,13 +784,13 @@ module.exports = {
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "download_headers": { "aa": 1, "bb": 2 } }');
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -799,9 +799,9 @@ module.exports = {
         req.end();
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>{
+        var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
           assert.equal(res.getHeader("aa"), 1);
           assert.equal(res.getHeader("bb"), 2);
@@ -818,13 +818,13 @@ module.exports = {
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.write('{ "upload_headers": { "aa": 1, "bb": 2 } }');
       reqCreate.end();
-      var resCreate = new MockRes(() =>{
+      var resCreate = new MockRes(() => {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
       });
 
-      var sendSrc = () =>{
+      var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -836,7 +836,7 @@ module.exports = {
         req.end();
       }
 
-      var sendDst = () =>{
+      var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
@@ -845,6 +845,46 @@ module.exports = {
       }
 
       server.handleRequest(reqCreate, resCreate);
+    },
+
+    'should send list of current sessions': function(done) {
+      var server = new StandaloneServer({});
+
+      function list(cb) {
+        var req = new MockReq({method: 'GET', url: '/stream'});
+        req.end();
+        var res = new MockRes(() => {
+          assert.equal(res.statusCode, 200);
+          assert.equal(res.getHeader('content-type'), 'application/json');
+          var body = res._getJSON();
+          cb(body);
+        });
+
+        server.handleRequest(req, res);
+      }
+
+      function create(cb) {
+        var req = new MockReq({method: 'POST', url: '/stream'});
+        req.end();
+        var res = new MockRes(() => {
+          assert.equal(res.statusCode, 201);
+          assert.equal(res.getHeader('content-type'), 'application/json');
+          assert(res._getJSON().stream);
+          cb();
+        });
+
+        server.handleRequest(req, res);
+      }
+
+      list(function(body) {
+        assert.equal(body.length, 0);
+        create(function() {
+          list(function(body) {
+            assert.equal(body.length, 1);
+            done();
+          });
+        });
+      });
     },
 
   }
