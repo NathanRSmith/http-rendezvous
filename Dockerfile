@@ -1,4 +1,4 @@
-FROM node:6-slim
+FROM node:10-slim
 MAINTAINER Nathan Smith <nathanrandal@gmail.com>
 
 RUN useradd -m rendezvous
