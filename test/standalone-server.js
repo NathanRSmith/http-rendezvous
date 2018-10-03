@@ -7,6 +7,8 @@ const MockRes = require('mock-res');
 
 const StandaloneServer = require('../lib/servers/standalone');
 
+MockReq.prototype.setTimeout = ()=>{};
+
 function assertErrorResponse(res, http_status, name, message) {
   assert.equal(res.statusCode, http_status);
   let body = JSON.parse(res._getString());
