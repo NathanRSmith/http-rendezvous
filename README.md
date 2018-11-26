@@ -1,6 +1,6 @@
 # HTTP-Rendezvous
 
-A simple http server with 4 routes:
+A simple http server with 6 routes:
 
 ## `POST /stream`
 
@@ -86,6 +86,29 @@ The following HTTP responses may occur:
 * 400 Bad Request: You provided a body that fails to parse as JSON
 * 404 Not Found: The stream id provided does not exist or has already expired
 * 409 Conflict: Both sides of the stream have already connected and can no longer receive client errors
+
+## `GET /ping`
+
+Sends back `200` with the body `pong`. Used to verify the server is up & responding to requests.
+
+## `GET /stream`
+
+*Warning: Should only be exposed to trusted networks*
+
+Lists active streams with information such as:
+
+```
+[{
+  id: stream uuid,
+  state: One of `CREATED, STREAMING, TIMEOUT_NO_SRC, TIMEOUT_NO_DST, SRC_ERROR, DST_ERROR, FINISHED, SRC_DISCONNECTED, DST_DISCONNECTED, CLIENT_ERROR, FINISHED`. In practice should only see `CREATED, STREAMING or FINISHED`,
+  download_headers: KVP of headers sent to download client,
+  upload_headers: KVP of headers sent to upload client,
+  bytes_transferred: Count of bytes transferred so far
+}]
+```
+
+* 200 OK: JSON response successfully retrieved (may be empty list if no active sessions)
+* 500 Internal Error: JSON error body with name & message fields
 
 # Tests
 
