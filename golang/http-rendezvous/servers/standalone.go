@@ -2,10 +2,12 @@ package standalone
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"http-rendezvous/session_manager"
 	"http-rendezvous/util"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -33,6 +35,7 @@ func New() Server {
 	router.GET("/ping", server.replyPong)
 	router.GET("/stream", server.handleListStreams)
 	router.POST("/stream", server.handleCreateStream)
+	router.PUT("/stream/:stream", server.handleSourceStream)
 
 	return server
 }
@@ -47,7 +50,10 @@ func (s *Server) replyError(w http.ResponseWriter, http_status int, err error) {
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http_status)
 
-	if err, ok := err.(*util.Error); !ok {
+	switch err.(type) {
+	case *util.Error:
+		err = err
+	default:
 		err = util.NewError("InternalError", err.Error())
 	}
 	res, _ := json.Marshal(err)
@@ -84,5 +90,26 @@ func (s *Server) handleCreateStream(w http.ResponseWriter, r *http.Request, p ht
 
 func (s *Server) handleListStreams(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	res, _ := json.Marshal(s.manager.ToJSON())
+	s.replyJSON(w, []byte(res))
+}
+
+func (s *Server) handleSourceStream(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	// TODO: set timeouts & such
+	// get session
+	// handle err
+	// register callback for when streaming starts
+	// register callback for when sess times out
+	// register callback for if there is a session error
+	// register callback for when finished ?
+	// register the request
+
+	counter := util.NewByteCounter(r.Body)
+
+	_, err := io.Copy(ioutil.Discard, counter)
+	if err != nil {
+		s.replyError(w, 500, err)
+		return
+	}
+	res := fmt.Sprintf("{\"reads\":%d,\"bytes\":%d,}", counter.Reads, counter.Bytes)
 	s.replyJSON(w, []byte(res))
 }
