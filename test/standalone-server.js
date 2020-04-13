@@ -257,6 +257,7 @@ module.exports = {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
+        setTimeout(getStatus, 50);
       });
 
       var sendSrc = () => {
@@ -270,11 +271,19 @@ module.exports = {
 
       var sendDst = () => {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
-        var res = new MockRes(() =>onEnd('dst', res));
+        var res = new MockRes(() => onEnd('dst', res));
         res.headersSent = true; // our mock doesn't handle this for us
         server.handleRequest(req, res);
       }
-
+      var getStatus = () => {
+        var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream+"/status"});
+        var res = new MockRes(() => {
+          assert.equal(res._getString(), '{"error":{"name":"StreamSourceError","message":"Stream source raised an error"}}');
+          assert.equal(res.statusCode, 400);
+          done();
+        });
+        server.handleRequest(req, res);
+      }
       var dones = 0;
       var onEnd = (side, res) => {
         if(side === 'src') {
@@ -285,10 +294,9 @@ module.exports = {
         else if(side === 'dst') {
           // dest headers have already been sent as success, so no error status header
           assert.equal(res.statusCode, 200);
-          assert.equal(res._getString(), 'abc\n\n{"name":"StreamSourceError","message":"Stream source raised an error"}');
+          assert.equal(res._getString(), 'abc');
           dones++;
         }
-        if(dones === 2) done();
       }
 
       server.handleRequest(reqCreate, resCreate);
@@ -341,13 +349,13 @@ module.exports = {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
+        setTimeout(getStatus, 5);
       });
 
       var sendSrc = () => {
         var req = new MockReq({method: 'PUT', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() =>onEnd('src', res));
         server.handleRequest(req, res);
-
         req.write('abc');
       }
 
@@ -358,8 +366,18 @@ module.exports = {
         server.handleRequest(req, res);
         setTimeout(() =>res.emit('error', new Error('blahdeblah')), 5);
       }
-
       var dones = 0;
+      var getStatus = () => {
+        var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream+"/status"});
+        var res = new MockRes(() => {
+          assert.equal(res._getString(), '{"error":{"name":"StreamDestinationError","message":"Stream destination raised an error"}}');
+          assert.equal(res.statusCode, 400);
+          done();
+        });
+        server.handleRequest(req, res);
+      }
+
+
       var onEnd = (side, res) => {
         if(side === 'src') {
           // src won't have gotten a response yet so we can still set appropriate status header
@@ -369,10 +387,9 @@ module.exports = {
         else if(side === 'dst') {
           // dest headers have already been sent as success, so no error status header
           assert.equal(res.statusCode, 200);
-          assert.equal(res._getString(), 'abc\n\n{"name":"StreamDestinationError","message":"Stream destination raised an error"}');
+          assert.equal(res._getString(), 'abc');
           dones++;
         }
-        if(dones === 2) done();
       }
 
       server.handleRequest(reqCreate, resCreate);
@@ -386,6 +403,7 @@ module.exports = {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
+        setTimeout(getStatus, 5);
       });
 
       var sendSrc = () => {
@@ -401,10 +419,18 @@ module.exports = {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream});
         var res = new MockRes(() => {
           assert.equal(res.statusCode, 200);
-          assert.equal(res._getString(), 'abc\n\n{"name":"StreamSourceError","message":"Stream source closed unexpectedly"}');
-          done();
+          assert.equal(res._getString(), 'abc');
         });
         res.headersSent = true; // our mock doesn't handle this for us
+        server.handleRequest(req, res);
+      }
+      var getStatus = () => {
+        var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream+"/status"});
+        var res = new MockRes(() => {
+          assert.equal(res._getString(), '{"error":{"name":"StreamSourceError","message":"Stream source closed unexpectedly"}}');
+          assert.equal(res.statusCode, 400);
+          done();
+        });
         server.handleRequest(req, res);
       }
 

@@ -46,16 +46,17 @@ module.exports = {
       assert.equal(manager.getSession(sess.id).id, sess.id);
       sess.delete();
     },
-
-    'should remove session if deleted': function() {
-      var manager = new SessionManager();
+    'should remove session if deleted': function(done) {
+      var manager = new SessionManager({session_ttl: 5});
       var sess = manager.createSession();
 
       assert.equal(manager.getSession(sess.id).id, sess.id);
       sess.delete();
-      assert.equal(manager.getSession(sess.id), undefined);
+      setTimeout(() => {
+        assert.equal(manager.getSession(sess.id), undefined);
+        done();
+      }, 10);
     }
-
   },
 
   'Session': {
