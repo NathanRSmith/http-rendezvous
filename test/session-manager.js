@@ -36,7 +36,7 @@ module.exports = {
       var manager = new SessionManager();
       var sess = manager.createSession();
       assert(sess);
-      sess.delete();
+      sess.deactivate();
     },
 
     'should get a session by id': function() {
@@ -44,18 +44,19 @@ module.exports = {
       var sess = manager.createSession();
 
       assert.equal(manager.getSession(sess.id).id, sess.id);
-      sess.delete();
+      sess.deactivate();
     },
-
-    'should remove session if deleted': function() {
-      var manager = new SessionManager();
+    'should remove session after timeout once deactivated': function(done) {
+      var manager = new SessionManager({session_ttl: 5});
       var sess = manager.createSession();
 
       assert.equal(manager.getSession(sess.id).id, sess.id);
-      sess.delete();
-      assert.equal(manager.getSession(sess.id), undefined);
+      sess.deactivate();
+      setTimeout(() => {
+        assert.equal(manager.getSession(sess.id), undefined);
+        done();
+      }, 10);
     }
-
   },
 
   'Session': {
@@ -65,7 +66,7 @@ module.exports = {
       var sess = manager.createSession();
 
       assert.equal(sess.state, 'CREATED');
-      sess.delete();
+      sess.deactivate();
     },
 
     'should timeout after ttl without source or destination': function(done) {
@@ -92,7 +93,7 @@ module.exports = {
       sess.registerSource(req);
       assert.equal(sess.state, 'SRC_CONNECTED');
 
-      sess.delete();
+      sess.deactivate();
     },
 
     'should register destination': function() {
@@ -103,7 +104,7 @@ module.exports = {
       sess.registerDestination(req);
       assert.equal(sess.state, 'DST_CONNECTED');
 
-      sess.delete();
+      sess.deactivate();
     },
 
     'should register client error': function() {
@@ -118,7 +119,7 @@ module.exports = {
       assert.equal(sess.client_error.message, error.message);
       assert.equal(sess.state, 'CLIENT_ERROR');
 
-      sess.delete();
+      sess.deactivate();
     },
 
     'should emit client error': function(done) {
@@ -150,7 +151,7 @@ module.exports = {
 
       sess.registerClientError(error);
       assert.equal(finished, true);
-      assert.equal(sess.deleted, true);
+      assert.equal(sess.active, false);
     },
 
     'should timeout after ttl with source not destination': function(done) {
