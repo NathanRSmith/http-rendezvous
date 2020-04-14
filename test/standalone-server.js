@@ -279,7 +279,7 @@ module.exports = {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream+"/status"});
         var res = new MockRes(() => {
           assert.equal(res._getString(), '{"error":{"name":"StreamSourceError","message":"Stream source raised an error"}}');
-          assert.equal(res.statusCode, 400);
+          assert.equal(res.statusCode, 200);
           done();
         });
         server.handleRequest(req, res);
@@ -371,7 +371,7 @@ module.exports = {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream+"/status"});
         var res = new MockRes(() => {
           assert.equal(res._getString(), '{"error":{"name":"StreamDestinationError","message":"Stream destination raised an error"}}');
-          assert.equal(res.statusCode, 400);
+          assert.equal(res.statusCode, 200);
           done();
         });
         server.handleRequest(req, res);
@@ -428,7 +428,7 @@ module.exports = {
         var req = new MockReq({method: 'GET', url: '/stream/'+resCreate._getJSON().stream+"/status"});
         var res = new MockRes(() => {
           assert.equal(res._getString(), '{"error":{"name":"StreamSourceError","message":"Stream source closed unexpectedly"}}');
-          assert.equal(res.statusCode, 400);
+          assert.equal(res.statusCode, 200);
           done();
         });
         server.handleRequest(req, res);
