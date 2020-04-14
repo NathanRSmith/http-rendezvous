@@ -257,7 +257,8 @@ module.exports = {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
-        setTimeout(getStatus, 50);
+        // timeout value should be greater than 5
+        setTimeout(getStatus, 10);
       });
 
       var sendSrc = () => {
@@ -266,7 +267,7 @@ module.exports = {
         server.handleRequest(req, res);
 
         req.write('abc');
-        setTimeout(() =>req.emit('error', new Error('blahdeblah')), 10);
+        setTimeout(() =>req.emit('error', new Error('blahdeblah')), 5);
       }
 
       var sendDst = () => {
@@ -349,7 +350,7 @@ module.exports = {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
-        setTimeout(getStatus, 5);
+        setTimeout(getStatus, 10);
       });
 
       var sendSrc = () => {
@@ -403,7 +404,7 @@ module.exports = {
         assert.equal(resCreate.statusCode, 201);
         sendSrc();
         sendDst();
-        setTimeout(getStatus, 5);
+        setTimeout(getStatus, 10);
       });
 
       var sendSrc = () => {
