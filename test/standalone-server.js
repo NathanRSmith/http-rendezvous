@@ -180,7 +180,7 @@ module.exports = {
     },
 
     'should send 429 if destination already connected': function(done) {
-      var server = new StandaloneServer({});
+      var server = new StandaloneServer({session_ttl: 600});
       var reqCreate = new MockReq({method: 'POST', url: '/stream'});
       reqCreate.end();
       var resCreate = new MockRes(() => {
