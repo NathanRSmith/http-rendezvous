@@ -100,7 +100,11 @@ Lists active streams with information such as:
 ```
 [{
   id: stream uuid,
+  created_at: ISO8601 timestamp when the stream was created,
+  deactivated_at: ISO8601 timestamp when the stream was deactivated,
   state: One of `CREATED, STREAMING, TIMEOUT_NO_SRC, TIMEOUT_NO_DST, SRC_ERROR, DST_ERROR, FINISHED, SRC_DISCONNECTED, DST_DISCONNECTED, CLIENT_ERROR, FINISHED`. In practice should only see `CREATED, STREAMING or FINISHED`,
+  active: Boolean whether the stream is active (not finished),
+  error: Object with `name` & `message` if an error occurred before or during streaming,
   download_headers: KVP of headers sent to download client,
   upload_headers: KVP of headers sent to upload client,
   bytes_transferred: Count of bytes transferred so far
@@ -109,6 +113,10 @@ Lists active streams with information such as:
 
 * 200 OK: JSON response successfully retrieved (may be empty list if no active sessions)
 * 500 Internal Error: JSON error body with name & message fields
+
+## `GET /stream/:id/status`
+
+Returns status information about the specified stream. Contains a single object in the form described in `GET /stream`. Status information is retained for 1 minute after the stream deactivates.
 
 # Tests
 
